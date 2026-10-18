@@ -3,7 +3,7 @@
   "id": "aurelvia_machines",
   "version": "${version}",
   "name": "Aurelvia Makineleri",
-  "description": "Kimlik Makinesi, Bilgisayar ve Konveyör blokları.",
+  "description": "Kimlik Makinesi, Bilgisayar ve Konveyor. Bilgisayara sag tikla, sifreyi gir, oyuncu sec, kimlik kartini al.",
   "authors": [
     "AURELVIA"
   ],

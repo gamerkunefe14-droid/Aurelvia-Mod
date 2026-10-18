@@ -1,15 +1,33 @@
 {
-  "itemGroup.aurelvia.machines": "Aurelvia Makineleri",
-  "block.aurelvia.computer": "Bilgisayar",
-  "block.aurelvia.conveyor": "Konveyör",
-  "block.aurelvia.id_machine": "Kimlik Makinesi",
-  "item.aurelvia.id_card": "Kimlik Kartı",
-  "item.aurelvia.id_card.named": "Kimlik Kartı - %s",
-  "block.aurelvia.computer.cannot_use_alone": "Bu bilgisayar tek başına kullanılamaz! Kimlik makinesinin bir parçasıdır.",
-  "gui.aurelvia.password_title": "Kimlik Makinesi - Şifre",
-  "gui.aurelvia.enter_password": "Şifreyi Girin:",
-  "gui.aurelvia.submit": "Gönder",
-  "gui.aurelvia.select_player": "Oyuncu Seçin:",
-  "gui.aurelvia.wrong_password": "§cYanlış şifre!",
-  "gui.aurelvia.producing_card": "§a%s için kimlik kartı üretiliyor..."
+  "itemGroup.aurelvia_machines.main": "Aurelvia makineleri",
+
+  "block.aurelvia_machines.computer": "Bilgisayar",
+  "block.aurelvia_machines.conveyor": "Konveyör",
+  "block.aurelvia_machines.id_machine": "Kimlik Makinesi",
+  "item.aurelvia_machines.id_card": "Kimlik Kartı",
+  "item.aurelvia_machines.id_card.named": "Kimlik Kartı: %s",
+
+  "gui.aurelvia_machines.password_title": "KİMLİK MAKİNESİ",
+  "gui.aurelvia_machines.password_label": "Şifreyi girin:",
+  "gui.aurelvia_machines.login": "Giriş Yap",
+  "gui.aurelvia_machines.cancel": "Kapat",
+  "gui.aurelvia_machines.wrong_password": "Yanlış şifre! Tekrar deneyin.",
+
+  "gui.aurelvia_machines.select_player_title": "Oyuncu Seç",
+  "gui.aurelvia_machines.player_count": "%s oyuncu listeleniyor",
+  "gui.aurelvia_machines.no_players": "Listelenecek oyuncu yok",
+
+  "gui.aurelvia_machines.producing": "Kimlik kartı hazırlanıyor: %s",
+  "gui.aurelvia_machines.card_ready": "Kimlik kartı konveyörde hazır: %s",
+  "gui.aurelvia_machines.card_taken": "Kimlik kartı alındı.",
+  "gui.aurelvia_machines.busy": "Makinede zaten hazır bir kart var. Önce onu alın.",
+
+  "gui.aurelvia_machines.card_title": "KİMLİK KARTI",
+  "gui.aurelvia_machines.card_holder": "Kart sahibi",
+  "gui.aurelvia_machines.card_org": "UNİON of YELLOW BANANA",
+  "gui.aurelvia_machines.card_hint": "Kartı görmek için elindeyken sağ tıkla.",
+  "gui.aurelvia_machines.card_close_hint": "Kapatmak için ESC",
+
+  "gui.aurelvia_machines.computer_alone": "Bu bilgisayar tek başına çalışmaz! Kimlik makinesinin bir parçasıdır.",
+  "gui.aurelvia_machines.no_space": "Makine kurulamadı: sağda 1 blok (konveyör) ve üstte 1 blok (bilgisayar) boş olmalı."
 }

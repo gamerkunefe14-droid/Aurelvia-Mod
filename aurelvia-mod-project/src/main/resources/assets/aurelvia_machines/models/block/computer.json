@@ -1,6 +1,8 @@
 {
-  "parent": "minecraft:block/cube_all",
+  "parent": "minecraft:block/orientable",
   "textures": {
-    "all": "aurelvia_machines:block/computer"
+    "top": "aurelvia_machines:block/computer_top",
+    "front": "aurelvia_machines:block/computer_front",
+    "side": "aurelvia_machines:block/computer_side"
   }
 }

@@ -2,35 +2,43 @@ package tr.aurelvia.client;
 
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
-import tr.aurelvia.AurelviaMachinesMod;
+import net.minecraft.client.Minecraft;
+import tr.aurelvia.item.IdCardItem;
 import tr.aurelvia.networking.ModNetworking;
 
 /**
- * Client-side mod initializer
+ * Istemci tarafi kayitlari:
+ *  - sifre ekrani
+ *  - oyuncu listesi ekrani
+ *  - kimlik karti goruntuleyici
  */
-public class AurelviaClient implements ClientModInitializer {
-    
+public class AurelviaMachinesClient implements ClientModInitializer {
+
     @Override
     public void onInitializeClient() {
-        AurelviaMachinesMod.LOGGER.info("Initializing Aurelvia Client");
-        
-        // Register client-side packet handlers
-        ClientPlayNetworking.registerGlobalReceiver(
-            ModNetworking.OpenIdMachinePayload.TYPE,
-            (payload, context) -> {
-                context.client().execute(() -> {
-                    context.client().setScreen(new PasswordScreen(payload.pos()));
-                });
+        // Sunucu "sifre ekranini ac" dedi
+        ClientPlayNetworking.registerGlobalReceiver(ModNetworking.OpenMachinePayload.TYPE, (payload, context) -> {
+            Minecraft client = context.client();
+            if (client != null) {
+                client.execute(() -> client.setScreen(new PasswordScreen(payload.pos())));
             }
-        );
-        
-        ClientPlayNetworking.registerGlobalReceiver(
-            ModNetworking.PlayerListPayload.TYPE,
-            (payload, context) -> {
-                context.client().execute(() -> {
-                    context.client().setScreen(new PlayerListScreen(payload.pos(), payload.playerNames()));
-                });
+        });
+
+        // Sifre dogru -> oyuncu listesi geldi
+        ClientPlayNetworking.registerGlobalReceiver(ModNetworking.PlayerListPayload.TYPE, (payload, context) -> {
+            Minecraft client = context.client();
+            if (client != null) {
+                client.execute(() -> client.setScreen(
+                        new PlayerListScreen(payload.pos(), payload.names(), payload.uuids())));
             }
-        );
+        });
+
+        // Kart ele alinip sag tiklandiginda buyuk kart gorunumu
+        IdCardItem.CLIENT_VIEWER = stack -> {
+            Minecraft client = Minecraft.getInstance();
+            client.setScreen(new IdCardViewScreen(
+                    IdCardItem.getOwnerName(stack),
+                    IdCardItem.getOwnerUuid(stack)));
+        };
     }
 }

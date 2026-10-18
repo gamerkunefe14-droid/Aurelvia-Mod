@@ -1,15 +1,33 @@
 {
-  "itemGroup.aurelvia.machines": "Aurelvia Machines",
-  "block.aurelvia.computer": "Computer",
-  "block.aurelvia.conveyor": "Conveyor",
-  "block.aurelvia.id_machine": "ID Machine",
-  "item.aurelvia.id_card": "ID Card",
-  "item.aurelvia.id_card.named": "ID Card - %s",
-  "block.aurelvia.computer.cannot_use_alone": "This computer cannot be used alone! It's part of the ID machine.",
-  "gui.aurelvia.password_title": "ID Machine - Password",
-  "gui.aurelvia.enter_password": "Enter Password:",
-  "gui.aurelvia.submit": "Submit",
-  "gui.aurelvia.select_player": "Select Player:",
-  "gui.aurelvia.wrong_password": "§cWrong password!",
-  "gui.aurelvia.producing_card": "§aProducing ID card for %s..."
+  "itemGroup.aurelvia_machines.main": "Aurelvia machines",
+
+  "block.aurelvia_machines.computer": "Computer",
+  "block.aurelvia_machines.conveyor": "Conveyor",
+  "block.aurelvia_machines.id_machine": "ID Machine",
+  "item.aurelvia_machines.id_card": "ID Card",
+  "item.aurelvia_machines.id_card.named": "ID Card: %s",
+
+  "gui.aurelvia_machines.password_title": "ID MACHINE",
+  "gui.aurelvia_machines.password_label": "Enter the password:",
+  "gui.aurelvia_machines.login": "Log in",
+  "gui.aurelvia_machines.cancel": "Close",
+  "gui.aurelvia_machines.wrong_password": "Wrong password! Try again.",
+
+  "gui.aurelvia_machines.select_player_title": "Select a player",
+  "gui.aurelvia_machines.player_count": "%s players listed",
+  "gui.aurelvia_machines.no_players": "No players to list",
+
+  "gui.aurelvia_machines.producing": "Preparing the ID card for: %s",
+  "gui.aurelvia_machines.card_ready": "The ID card is ready on the conveyor: %s",
+  "gui.aurelvia_machines.card_taken": "ID card taken.",
+  "gui.aurelvia_machines.busy": "There is already a card on the machine. Take it first.",
+
+  "gui.aurelvia_machines.card_title": "ID CARD",
+  "gui.aurelvia_machines.card_holder": "Card holder",
+  "gui.aurelvia_machines.card_org": "UNİON of YELLOW BANANA",
+  "gui.aurelvia_machines.card_hint": "Right-click while holding it to view the card.",
+  "gui.aurelvia_machines.card_close_hint": "Press ESC to close",
+
+  "gui.aurelvia_machines.computer_alone": "This computer cannot be used on its own! It is a part of the ID machine.",
+  "gui.aurelvia_machines.no_space": "Cannot place the machine: 1 block on the right (conveyor) and 1 block above (computer) must be free."
 }

@@ -1,7 +1,36 @@
 {
   "variants": {
-    "": {
-      "model": "aurelvia_machines:block/computer"
+    "attached=true,facing=north": {
+      "model": "aurelvia_machines:block/computer",
+      "y": 0
+    },
+    "attached=false,facing=north": {
+      "model": "aurelvia_machines:block/computer",
+      "y": 0
+    },
+    "attached=true,facing=south": {
+      "model": "aurelvia_machines:block/computer",
+      "y": 180
+    },
+    "attached=false,facing=south": {
+      "model": "aurelvia_machines:block/computer",
+      "y": 180
+    },
+    "attached=true,facing=east": {
+      "model": "aurelvia_machines:block/computer",
+      "y": 90
+    },
+    "attached=false,facing=east": {
+      "model": "aurelvia_machines:block/computer",
+      "y": 90
+    },
+    "attached=true,facing=west": {
+      "model": "aurelvia_machines:block/computer",
+      "y": 270
+    },
+    "attached=false,facing=west": {
+      "model": "aurelvia_machines:block/computer",
+      "y": 270
     }
   }
 }

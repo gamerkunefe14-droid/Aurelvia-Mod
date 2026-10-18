@@ -1,54 +1,87 @@
 package tr.aurelvia.item;
 
 import net.minecraft.ChatFormatting;
-import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResultHolder;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.level.Level;
+
 import java.util.List;
+import java.util.function.Consumer;
 
 /**
- * Kimlik kartı item'ı - oyuncu bilgisi taşır
+ * Kimlik karti item'i.
+ *
+ * Kart uzerinde:
+ *   - oyuncunun onden gorunumu (skin)
+ *   - oyuncunun adi
+ *   - "UNION of YELLOW BANANA" yazisi
+ * bulunur. Gorsel, kart ele alinip sag tiklandiginda tam ekran gosterilir.
  */
 public class IdCardItem extends Item {
+
+    /**
+     * Client tarafindan (AurelviaMachinesClient) doldurulur.
+     * Dedicated server'da null kalir.
+     */
+    public static Consumer<ItemStack> CLIENT_VIEWER;
+
     public IdCardItem(Properties properties) {
         super(properties);
     }
 
-    @Override
-    public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
-        super.appendHoverText(stack, context, tooltipComponents, tooltipFlag);
-        
-        String playerName = getPlayerName(stack);
-        if (playerName != null) {
-            tooltipComponents.add(Component.literal("Player: " + playerName).withStyle(ChatFormatting.WHITE));
-            tooltipComponents.add(Component.literal("UNION of YELLOW BANANA").withStyle(ChatFormatting.YELLOW, ChatFormatting.BOLD));
-        } else {
-            tooltipComponents.add(Component.literal("No player assigned").withStyle(ChatFormatting.GRAY));
-        }
+    // --------------------------------------------------------------- veri erisimi
+
+    public static void setProfile(ItemStack stack, String name, String uuid) {
+        stack.set(AurelviaDataComponents.CARD_PLAYER_NAME, name == null ? "" : name);
+        stack.set(AurelviaDataComponents.CARD_PLAYER_UUID, uuid == null ? "" : uuid);
     }
+
+    public static String getOwnerName(ItemStack stack) {
+        return stack.get(AurelviaDataComponents.CARD_PLAYER_NAME);
+    }
+
+    public static String getOwnerUuid(ItemStack stack) {
+        return stack.get(AurelviaDataComponents.CARD_PLAYER_UUID);
+    }
+
+    // ------------------------------------------------------------------ gorunum
 
     @Override
     public Component getName(ItemStack stack) {
-        String playerName = getPlayerName(stack);
-        if (playerName != null) {
-            return Component.translatable("item.aurelvia.id_card.named", playerName);
+        String owner = getOwnerName(stack);
+        if (owner != null && !owner.isEmpty()) {
+            return Component.translatable("item.aurelvia_machines.id_card.named", owner);
         }
         return super.getName(stack);
     }
 
-    /**
-     * Kimlik kartına oyuncu adını kaydet
-     */
-    public static void setPlayerName(ItemStack stack, String playerName) {
-        stack.set(AurelviaDataComponents.PLAYER_NAME, playerName);
+    @Override
+    public void appendHoverText(ItemStack stack, TooltipContext context,
+                                List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
+        super.appendHoverText(stack, context, tooltipComponents, tooltipFlag);
+
+        String owner = getOwnerName(stack);
+        if (owner != null && !owner.isEmpty()) {
+            tooltipComponents.add(Component.translatable("gui.aurelvia_machines.card_org")
+                    .withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD));
+            tooltipComponents.add(Component.translatable("gui.aurelvia_machines.card_hint")
+                    .withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC));
+        }
     }
 
-    /**
-     * Kimlik kartından oyuncu adını al
-     */
-    public static String getPlayerName(ItemStack stack) {
-        return stack.get(AurelviaDataComponents.PLAYER_NAME);
+    @Override
+    public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand usedHand) {
+        ItemStack stack = player.getItemInHand(usedHand);
+        String owner = getOwnerName(stack);
+        if (owner != null && !owner.isEmpty() && CLIENT_VIEWER != null) {
+            CLIENT_VIEWER.accept(stack);
+            return InteractionResultHolder.sidedSuccess(stack, level.isClientSide());
+        }
+        return InteractionResultHolder.pass(stack);
     }
 }

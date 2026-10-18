@@ -1,0 +1,54 @@
+# apiDump gorevinin javap ile doktugu siniflar.
+# Bir sinif listede yoksa/ismi yanlissa javap hata verir -> bu da bilgi.
+
+# --- bloklar / blokstate
+net.minecraft.world.level.block.Block
+net.minecraft.world.level.block.state.BlockBehaviour
+net.minecraft.world.level.block.state.BlockState
+net.minecraft.world.level.block.state.StateDefinition
+net.minecraft.world.level.block.state.properties.BlockStateProperties
+net.minecraft.world.level.block.EntityBlock
+net.minecraft.world.level.block.entity.BlockEntity
+net.minecraft.world.level.block.entity.BlockEntityType
+net.minecraft.world.level.block.entity.BlockEntityType$Builder
+net.minecraft.world.level.block.entity.BlockEntityTicker
+
+# --- itemlar
+net.minecraft.world.item.Item
+net.minecraft.world.item.Item$Properties
+net.minecraft.world.item.ItemStack
+net.minecraft.world.item.BlockItem
+net.minecraft.world.item.CreativeModeTab
+net.minecraft.world.item.CreativeModeTab$Builder
+net.minecraft.core.component.DataComponentType
+net.minecraft.core.component.DataComponentType$Builder
+
+# --- world / entity
+net.minecraft.world.level.Level
+net.minecraft.world.entity.player.Player
+net.minecraft.world.entity.player.Inventory
+net.minecraft.world.entity.item.ItemEntity
+net.minecraft.world.InteractionResultHolder
+net.minecraft.world.phys.AABB
+
+# --- client
+net.minecraft.client.gui.screens.Screen
+net.minecraft.client.gui.GuiGraphics
+net.minecraft.client.gui.components.EditBox
+net.minecraft.client.gui.components.Button
+net.minecraft.client.gui.components.Button$Builder
+net.minecraft.client.resources.DefaultPlayerSkin
+net.minecraft.client.resources.PlayerSkin
+net.minecraft.client.multiplayer.PlayerInfo
+net.minecraft.client.renderer.RenderPipelines
+
+# --- server
+net.minecraft.server.level.ServerPlayer
+net.minecraft.server.level.ServerLevel
+net.minecraft.server.MinecraftServer
+net.minecraft.server.players.PlayerList
+
+# --- fabric api
+net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry
+net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking
+net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking
