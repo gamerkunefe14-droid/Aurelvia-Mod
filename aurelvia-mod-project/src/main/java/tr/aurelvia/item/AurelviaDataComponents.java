@@ -1,36 +1,30 @@
 package tr.aurelvia.item;
 
 import com.mojang.serialization.Codec;
-import net.minecraft.core.Registry;
 import net.minecraft.core.component.DataComponentType;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.codec.ByteBufCodecs;
-import tr.aurelvia.AurelviaMachinesMod;
 
 /**
- * Kimlik kartinin uzerinde tasinan bilgiler (data component).
+ * Kimlik kartinin uzerinde tasinan bilgiler.
  */
 public final class AurelviaDataComponents {
 
     /** Karttaki oyuncunun adi. */
-    public static final DataComponentType<String> CARD_PLAYER_NAME = register("card_player_name",
+    public static final DataComponentType<String> CARD_PLAYER_NAME =
             DataComponentType.<String>builder()
                     .persistent(Codec.STRING)
-                    .networkSynchronized(ByteBufCodecs.STRING_UTF8));
+                    .networkSynchronized(ByteBufCodecs.STRING_UTF8)
+                    .build();
 
-    /** Karttaki oyuncunun UUID'si (deri/skin icin). */
-    public static final DataComponentType<String> CARD_PLAYER_UUID = register("card_player_uuid",
+    /** Karttaki oyuncunun UUID'si (skin icin). */
+    public static final DataComponentType<String> CARD_PLAYER_UUID =
             DataComponentType.<String>builder()
                     .persistent(Codec.STRING)
-                    .networkSynchronized(ByteBufCodecs.STRING_UTF8));
-
-    private static <T> DataComponentType<T> register(String name, DataComponentType.Builder<T> builder) {
-        return Registry.register(BuiltInRegistries.DATA_COMPONENT_TYPE,
-                AurelviaMachinesMod.id(name), builder.build());
-    }
+                    .networkSynchronized(ByteBufCodecs.STRING_UTF8)
+                    .build();
 
     public static void init() {
-        // Sinifi yukler, boylece yukaridaki statik kayitlar calisir.
+        // sinifi yukler, statik alanlar hazirlanir
     }
 
     private AurelviaDataComponents() {

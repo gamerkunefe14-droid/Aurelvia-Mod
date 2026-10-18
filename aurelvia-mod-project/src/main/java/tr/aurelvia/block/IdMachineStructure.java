@@ -2,145 +2,90 @@ package tr.aurelvia.block;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.state.BlockState;
-import tr.aurelvia.AurelviaMachinesMod;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.level.block.state.properties.BooleanProperty;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
+import tr.aurelvia.item.IdCardItem;
+
+import java.util.List;
 
 /**
- * Kimlik makinesinin 3 parcali yapisini yoneten yardimci sinif.
+ * Kimlik makinesinin 3 parcasini bir arada tutan yardimci.
  *
- *  [bilgisayar]
- *  [makine][konveyor]
- *
- * makine  = asil blok (block entity burada)
- * konveyor= makinenin saginda (facing'e gore)
- * bilgisayar = makinenin tam ustunde
+ *   [bilgisayar]   = machinePos.above()
+ *   [id_machine]   = machinePos            (sag tik -> sifre)
+ *   [konveyor]     = machinePos.relative(yon)   (kart burada belirir)
  */
 public final class IdMachineStructure {
 
-    /** Ic ice yok etme (recursion) korumasi. */
-    public static boolean destroying = false;
+    /** Bu blok bir kimlik makinesinin parcasi mi? */
+    public static final BooleanProperty ATTACHED = BooleanProperty.create("attached");
 
-    public static BlockPos conveyorPos(BlockPos machinePos, Direction facing) {
-        return machinePos.relative(facing.getClockWise());
+    /** Kartin konveyor uzerinde duracagi yukseklik. */
+    private static final double CARD_Y = 1.06D;
+
+    private IdMachineStructure() {
+    }
+
+    public static Direction facing(Level level, BlockPos machinePos) {
+        return level.getBlockState(machinePos).getValue(BlockStateProperties.HORIZONTAL_FACING);
+    }
+
+    public static BlockPos conveyorPos(Level level, BlockPos machinePos) {
+        return machinePos.relative(facing(level, machinePos));
     }
 
     public static BlockPos computerPos(BlockPos machinePos) {
         return machinePos.above();
     }
 
-    public static boolean isMachine(BlockState state) {
-        return state.is(AurelviaMachinesMod.ID_MACHINE_BLOCK);
+    /** Kimlik kartini konveyorun ustune, havada duran bir esya olarak birakir. */
+    public static void spawnCard(Level level, BlockPos conveyorPos, String playerName, String playerUuid) {
+        // Ayni yerde eski bir kart varsa once onu kaldir
+        ItemEntity old = findCard(level, conveyorPos);
+        if (old != null) {
+            old.discard();
+        }
+
+        ItemStack stack = IdCardItem.create(playerName, playerUuid);
+        ItemEntity card = new ItemEntity(level,
+                conveyorPos.getX() + 0.5D,
+                conveyorPos.getY() + CARD_Y,
+                conveyorPos.getZ() + 0.5D,
+                stack);
+        card.setNoGravity(true);
+        card.setUnlimitedLifetime();
+        card.setPickUpDelay(Short.MAX_VALUE); // oyuncu ustunden gecince kendiliginden toplanmasin
+        card.setDeltaMovement(0.0D, 0.0D, 0.0D);
+        level.addFreshEntity(card);
     }
 
-    /**
-     * Verilen parca bloktan (bilgisayar / konveyor / makine) makinenin
-     * ana konumunu bulur. Makine yoksa null doner.
-     */
-    public static BlockPos findMachine(Level level, BlockPos pos) {
-        BlockState state = level.getBlockState(pos);
-
-        if (isMachine(state)) {
-            return pos;
-        }
-
-        // Bilgisayar: altindaki blok makine mi?
-        if (state.is(AurelviaMachinesMod.COMPUTER_BLOCK)) {
-            BlockPos below = pos.below();
-            if (isMachine(level.getBlockState(below))) {
-                return below;
-            }
-        }
-
-        // Konveyor: yanindaki makinenin saginda mi?
-        if (state.is(AurelviaMachinesMod.CONVEYOR_BLOCK)) {
-            for (Direction dir : Direction.Plane.HORIZONTAL) {
-                BlockPos candidate = pos.relative(dir);
-                BlockState candidateState = level.getBlockState(candidate);
-                if (isMachine(candidateState)
-                        && conveyorPos(candidate, candidateState.getValue(IdMachineBlock.FACING)).equals(pos)) {
-                    return candidate;
+    /** Konveyorun ustunde bekleyen kimlik kartini bulur (yoksa null). */
+    public static ItemEntity findCard(Level level, BlockPos conveyorPos) {
+        AABB box = new AABB(
+                conveyorPos.getX(), conveyorPos.getY() + 0.5D, conveyorPos.getZ(),
+                conveyorPos.getX() + 1.0D, conveyorPos.getY() + 2.5D, conveyorPos.getZ() + 1.0D);
+        List<net.minecraft.world.entity.Entity> found = level.getEntities(null, box, e -> true);
+        for (net.minecraft.world.entity.Entity e : found) {
+            if (e instanceof ItemEntity) {
+                ItemEntity item = (ItemEntity) e;
+                if (IdCardItem.isCard(item.getItem())) {
+                    return item;
                 }
             }
         }
-
         return null;
     }
 
-    /**
-     * Makinenin konveyor + bilgisayar parcalarini drop birakmadan kaldirir.
-     */
-    public static void removeParts(Level level, BlockPos machinePos, BlockState machineState) {
-        if (destroying || level.isClientSide()) {
-            return;
-        }
-        destroying = true;
-        try {
-            Direction facing = machineState.getValue(IdMachineBlock.FACING);
-            BlockPos conveyor = conveyorPos(machinePos, facing);
-            BlockPos computer = computerPos(machinePos);
-
-            if (level.getBlockState(conveyor).is(AurelviaMachinesMod.CONVEYOR_BLOCK)) {
-                level.removeBlock(conveyor, false);
-            }
-            if (level.getBlockState(computer).is(AurelviaMachinesMod.COMPUTER_BLOCK)) {
-                level.removeBlock(computer, false);
-            }
-        } finally {
-            destroying = false;
-        }
-    }
-
-    /**
-     * Bir parca (bilgisayar/konveyor) kirildiginda tum makineyi bozar.
-     */
-    public static void onPartBroken(Level level, BlockPos partPos) {
-        if (destroying || level.isClientSide()) {
-            return;
-        }
-        BlockPos machinePos = findMachine(level, partPos);
-        if (machinePos == null) {
-            return;
-        }
-        destroying = true;
-        try {
-            BlockState machineState = level.getBlockState(machinePos);
-            if (isMachine(machineState)) {
-                // Tum yapiyi kaldir; makine bloku kendi item'ini dusurur.
-                Direction facing = machineState.getValue(IdMachineBlock.FACING);
-                BlockPos conveyor = conveyorPos(machinePos, facing);
-                BlockPos computer = computerPos(machinePos);
-                if (!partPos.equals(conveyor) && level.getBlockState(conveyor).is(AurelviaMachinesMod.CONVEYOR_BLOCK)) {
-                    level.removeBlock(conveyor, false);
-                }
-                if (!partPos.equals(computer) && level.getBlockState(computer).is(AurelviaMachinesMod.COMPUTER_BLOCK)) {
-                    level.removeBlock(computer, false);
-                }
-                Block.dropResources(machineState, level, machinePos);
-                level.removeBlock(machinePos, false);
-            }
-        } finally {
-            destroying = false;
-        }
-    }
-
-    /** Makinenin kurulumu icin gereken 3 yerin bos olup olmadigi. */
-    public static boolean hasSpaceFor(Level level, BlockPos machinePos, Direction facing,
-                                      net.minecraft.world.item.context.BlockPlaceContext context) {
-        return canReplace(level, conveyorPos(machinePos, facing), context)
-                && canReplace(level, computerPos(machinePos), context);
-    }
-
-    private static boolean canReplace(Level level, BlockPos pos,
-                                     net.minecraft.world.item.context.BlockPlaceContext context) {
-        return level.getBlockState(pos).canBeReplaced(context);
-    }
-
-    public static boolean is(Block block, BlockState state) {
-        return state.is(block);
-    }
-
-    private IdMachineStructure() {
+    /** Kartin dunya icindeki merkez konumu (goruntulemek icin). */
+    public static Vec3 cardWorldPos(BlockPos conveyorPos) {
+        return new Vec3(
+                conveyorPos.getX() + 0.5D,
+                conveyorPos.getY() + CARD_Y,
+                conveyorPos.getZ() + 0.5D);
     }
 }

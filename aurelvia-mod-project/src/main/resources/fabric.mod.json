@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "aurelvia_machines",
-  "version": "${version}",
+  "version": "1.0.0",
   "name": "Aurelvia Makineleri",
   "description": "Kimlik Makinesi, Bilgisayar ve Konveyor. Bilgisayara sag tikla, sifreyi gir, oyuncu sec, kimlik kartini al.",
   "authors": [

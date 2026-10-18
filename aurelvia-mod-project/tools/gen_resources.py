@@ -256,9 +256,9 @@ def main():
 
     # ---------------- blockstates
     dump(os.path.join(ASSETS, "blockstates", "computer.json"),
-         blockstate_horizontal_with_attached("computer"))
+         blockstate_horizontal("computer"))
     dump(os.path.join(ASSETS, "blockstates", "conveyor.json"),
-         blockstate_horizontal_with_attached("conveyor"))
+         blockstate_horizontal("conveyor"))
     dump(os.path.join(ASSETS, "blockstates", "id_machine.json"),
          blockstate_horizontal("id_machine"))
 
@@ -350,8 +350,9 @@ def main():
 
     dump(os.path.join(DATA, "loot_table", "blocks", "computer.json"),
          simple_drop("%s:computer" % NS, "%s:computer" % NS, True))
+    # Konveyorda 'attached' ozelligi YOK -> kosulsuz duser
     dump(os.path.join(DATA, "loot_table", "blocks", "conveyor.json"),
-         simple_drop("%s:conveyor" % NS, "%s:conveyor" % NS, True))
+         simple_drop("%s:conveyor" % NS))
     dump(os.path.join(DATA, "loot_table", "blocks", "id_machine.json"),
          simple_drop("%s:id_machine" % NS))
 

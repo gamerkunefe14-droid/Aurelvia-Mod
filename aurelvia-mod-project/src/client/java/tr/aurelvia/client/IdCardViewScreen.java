@@ -1,34 +1,40 @@
 package tr.aurelvia.client;
 
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.entity.player.PlayerSkin;
 
 /**
- * Kart ele alinip sag tiklandiginda acilan buyuk kimlik karti gorunumu.
+ * Kimlik kartini buyuk gosteren ekran.
  */
 public class IdCardViewScreen extends Screen {
 
     private final String playerName;
-    private final String uuid;
+    private final String playerUuid;
+    private PlayerSkin skin;
 
-    public IdCardViewScreen(String playerName, String uuid) {
-        super(Component.translatable("gui.aurelvia_machines.card_title"));
+    public IdCardViewScreen(String playerName, String playerUuid) {
+        super(Component.literal("Kimlik Kart\u0131"));
         this.playerName = playerName;
-        this.uuid = uuid;
+        this.playerUuid = playerUuid;
+    }
+
+    @Override
+    protected void init() {
+        this.skin = SkinHelper.skinFor(this.playerUuid);
+        this.addRenderableWidget(Button.builder(Component.literal("Kapat"), b -> this.onClose())
+                .bounds((this.width - 100) / 2, this.height / 2 + 86, 100, 20).build());
     }
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        int cardX = this.width / 2 - IdCardRenderer.CARD_W / 2;
-        int cardY = this.height / 2 - IdCardRenderer.CARD_H / 2;
-
-        IdCardRenderer.drawCard(guiGraphics, this.font, cardX, cardY, this.playerName, this.uuid);
-
-        guiGraphics.drawCenteredString(this.font,
-                Component.translatable("gui.aurelvia_machines.card_close_hint"),
-                this.width / 2, cardY + IdCardRenderer.CARD_H + 10, 0xFF888899);
-
+        this.renderBackground(guiGraphics, mouseX, mouseY, partialTick);
+        int x = (this.width - IdCardRenderer.cardWidth()) / 2;
+        int y = (this.height - IdCardRenderer.cardHeight()) / 2 - 20;
+        IdCardRenderer.draw(guiGraphics, this.font, x, y, this.playerName, this.skin);
+        guiGraphics.drawCenteredString(this.font, this.title, this.width / 2, y - 16, 0xFFFFC94D);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
     }
 

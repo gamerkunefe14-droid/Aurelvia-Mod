@@ -3,70 +3,70 @@ package tr.aurelvia.block;
 import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
-import net.minecraft.world.level.block.state.properties.BooleanProperty;
-import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
-import tr.aurelvia.block.entity.IdMachineBlockEntity;
+import net.minecraft.world.phys.Vec3;
+import tr.aurelvia.item.IdCardItem;
 
 import java.util.List;
 
 /**
- * Konveyor blogu.
+ * Konveyor.
  *
- * - Tek basina yerlestirilirse GERCEK konveyor gibi calisir:
- *   uzerindeki esyalari/varliklari baktigi yone dogru iter.
- * - Kimlik makinesinin parcasi olarak yerlestirildiginde (ATTACHED = true)
- *   uretilen kimlik kartini tasir; sag tiklaninca karti ele verir.
+ *  - TEK BASINA calisan gercek bir konveyordur: ustune cikan her seyi baktigi yone tasir.
+ *  - Kimlik makinesinin bir parcasi olarak kullanildiginda uzerindeki kimlik kartini TASIMAZ,
+ *    kart orada bekler; sag tikla ele alinir.
  */
 public class ConveyorBlock extends Block {
 
     public static final MapCodec<ConveyorBlock> CODEC = simpleCodec(ConveyorBlock::new);
-    public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
-    public static final BooleanProperty ATTACHED = BooleanProperty.create("attached");
 
-    /** Kac tickte bir itme yapilacagi. */
-    private static final int TICK_DELAY = 4;
-    /** Her tick'te uygulanacak hiz. */
-    private static final double PUSH_SPEED = 0.075D;
+    /** Kac tick'te bir hareket uygular (2 tick = 100ms). */
+    private static final int TICK_DELAY = 2;
+    /** Tasima hizi (blok/tick). */
+    private static final double SPEED = 0.14D;
 
     public ConveyorBlock(Properties properties) {
         super(properties);
-        this.registerDefaultState(this.stateDefinition.any()
-                .setValue(FACING, Direction.NORTH)
-                .setValue(ATTACHED, Boolean.FALSE));
+        this.registerDefaultState(this.defaultBlockState().setValue(BlockStateProperties.HORIZONTAL_FACING, Direction.NORTH));
     }
 
     @Override
-    protected MapCodec<? extends Block> codec() {
+    public MapCodec<ConveyorBlock> codec() {
         return CODEC;
     }
 
     @Override
-    public BlockState getStateForPlacement(BlockPlaceContext context) {
-        return this.defaultBlockState()
-                .setValue(FACING, context.getHorizontalDirection().getOpposite())
-                .setValue(ATTACHED, Boolean.FALSE);
+    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
+        builder.add(BlockStateProperties.HORIZONTAL_FACING);
     }
 
     @Override
-    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(FACING, ATTACHED);
+    public BlockState getStateForPlacement(BlockPlaceContext context) {
+        return this.defaultBlockState().setValue(BlockStateProperties.HORIZONTAL_FACING, context.getHorizontalDirection());
     }
 
-    // ------------------------------------------------------------- konveyor isi
+    // ------------------------------------------------------------------ tasima
+    @Override
+    public void tick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
+        moveEntities(level, pos, state.getValue(BlockStateProperties.HORIZONTAL_FACING));
+        // Konveyor surekli calisir: bir sonraki tick'i planla
+        level.scheduleTick(pos, this, TICK_DELAY);
+    }
 
     @Override
     public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean movedByPiston) {
@@ -76,64 +76,46 @@ public class ConveyorBlock extends Block {
         }
     }
 
-    @Override
-    protected void tick(BlockState state, net.minecraft.server.level.ServerLevel level, BlockPos pos,
-                        RandomSource random) {
-        level.scheduleTick(pos, this, TICK_DELAY);
-
-        if (Boolean.TRUE.equals(state.getValue(ATTACHED))) {
-            return; // makinenin parcasi: esya tasimaz, karti bekler
-        }
-
-        Direction direction = state.getValue(FACING);
-        // Blogun kendi hacmi + tam ustu
-        AABB box = new AABB(pos).expandTowards(0.0D, 1.0D, 0.0D);
-        List<Entity> entities = level.getEntities(null, box);
+    private void moveEntities(Level level, BlockPos pos, Direction facing) {
+        AABB box = new AABB(
+                pos.getX(), pos.getY() + 0.5D, pos.getZ(),
+                pos.getX() + 1.0D, pos.getY() + 1.5D, pos.getZ() + 1.0D);
+        List<Entity> entities = level.getEntities(null, box, e -> true);
         for (Entity entity : entities) {
-            if (entity instanceof ItemEntity item && item.getPickUpDelay() > 100) {
-                continue; // makinenin sergiledigi kart gibi "alinamaz" esyalari itme
-            }
-            if (!entity.isAlive() || entity.isSpectator()) {
+            if (entity.isSpectator()) {
                 continue;
             }
-            entity.setDeltaMovement(entity.getDeltaMovement().add(
-                    direction.getStepX() * PUSH_SPEED,
-                    0.0D,
-                    direction.getStepZ() * PUSH_SPEED));
-            entity.hasImpulse = true;
+            // Kimlik karti konveyorde bekler, tasinmaz
+            if (entity instanceof ItemEntity && IdCardItem.isCard(((ItemEntity) entity).getItem())) {
+                continue;
+            }
+            Vec3 motion = entity.getDeltaMovement();
+            entity.setDeltaMovement(
+                    motion.x * 0.6D + facing.getStepX() * SPEED,
+                    motion.y,
+                    motion.z * 0.6D + facing.getStepZ() * SPEED);
+            entity.hurtMarked = true; // hiz degisimini istemcilere gonder
         }
     }
 
-    // --------------------------------------------------------------- etkilesim
-
+    // ------------------------------------------------------- kartin ele alinmasi
     @Override
-    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos,
-                                               Player player, BlockHitResult hitResult) {
-        if (level.isClientSide()) {
-            return InteractionResult.SUCCESS;
-        }
-        if (!Boolean.TRUE.equals(state.getValue(ATTACHED))) {
+    public InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos,
+                                            Player player, BlockHitResult hitResult) {
+        ItemEntity card = IdMachineStructure.findCard(level, pos);
+        if (card == null) {
             return InteractionResult.PASS;
         }
-
-        BlockPos machinePos = IdMachineStructure.findMachine(level, pos);
-        if (machinePos != null && level.getBlockEntity(machinePos) instanceof IdMachineBlockEntity machine) {
-            if (machine.takeCard(player)) {
-                if (player instanceof ServerPlayer serverPlayer) {
-                    serverPlayer.sendSystemMessage(
-                            net.minecraft.network.chat.Component.translatable("gui.aurelvia_machines.card_taken"));
-                }
-                return InteractionResult.CONSUME;
+        if (!level.isClientSide()) {
+            ItemStack stack = card.getItem();
+            if (player.getInventory().add(stack)) {
+                card.discard();
+                player.displayClientMessage(
+                        Component.literal("Kimlik kartini ald\u0131n: " + IdCardItem.playerName(stack)), true);
+            } else {
+                player.displayClientMessage(Component.literal("Envanterin dolu!"), true);
             }
         }
-        return InteractionResult.PASS;
-    }
-
-    @Override
-    public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
-        if (!state.is(newState.getBlock()) && Boolean.TRUE.equals(state.getValue(ATTACHED))) {
-            IdMachineStructure.onPartBroken(level, pos);
-        }
-        super.onRemove(state, level, pos, newState, movedByPiston);
+        return InteractionResult.SUCCESS;
     }
 }

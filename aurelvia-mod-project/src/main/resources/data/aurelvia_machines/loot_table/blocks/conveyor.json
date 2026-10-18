@@ -11,13 +11,6 @@
       ],
       "conditions": [
         {
-          "condition": "minecraft:block_state_property",
-          "block": "aurelvia_machines:conveyor",
-          "properties": {
-            "attached": "false"
-          }
-        },
-        {
           "condition": "minecraft:survives_explosion"
         }
       ]
