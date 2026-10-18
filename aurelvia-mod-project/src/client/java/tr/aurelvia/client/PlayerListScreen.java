@@ -1,5 +1,7 @@
 package tr.aurelvia.client;
 
+import java.util.List;
+
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
@@ -8,87 +10,75 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import tr.aurelvia.networking.ModNetworking;
 
-import java.util.List;
-
 /**
- * Oyuncu listesi ekranı - listeden oyuncu seçimi
+ * Dogru sifreden sonra sunucudaki GERCEK oyunculari listeler.
+ * Bir satira tiklaninca sunucuya "secildi" paketi gider.
  */
 public class PlayerListScreen extends Screen {
-    private final BlockPos machinePos;
-    private final List<String> playerNames;
-    private static final int BUTTON_HEIGHT = 20;
-    private static final int BUTTON_WIDTH = 200;
-    private static final int BUTTON_SPACING = 4;
-    private static final int MAX_VISIBLE = 8;
-    private int scrollOffset = 0;
-    
-    public PlayerListScreen(BlockPos pos, List<String> playerNames) {
-        super(Component.translatable("gui.aurelvia.select_player"));
-        this.machinePos = pos;
-        this.playerNames = playerNames;
+
+    private static final int PANEL_W = 240;
+    private static final int ROWS = 8;
+    private static final int ROW_H = 22;
+
+    private final BlockPos pos;
+    private final List<String[]> players;
+
+    public PlayerListScreen(BlockPos pos, List<String[]> players) {
+        super(Component.literal("Kimlik Bas\u0131lacak Oyuncu"));
+        this.pos = pos;
+        this.players = players;
     }
-    
+
     @Override
     protected void init() {
-        super.init();
-        rebuildButtons();
+        int x0 = (this.width - PANEL_W) / 2;
+        int y0 = (this.height - (ROWS * ROW_H + 78)) / 2;
+
+        int shown = 0;
+        for (String[] entry : this.players) {
+            if (shown >= ROWS) {
+                break;
+            }
+            final String name = entry[0];
+            final String uuid = entry[1];
+            final int index = shown;
+            this.addRenderableWidget(
+                    Button.builder(Component.literal(name), b -> this.select(name, uuid))
+                            .bounds(x0 + 14, y0 + 34 + index * ROW_H, PANEL_W - 28, 20)
+                            .build());
+            shown++;
+        }
+
+        this.addRenderableWidget(
+                Button.builder(Component.literal("Kapat"), b -> this.onClose())
+                        .bounds(x0 + 14, y0 + 34 + ROWS * ROW_H + 6, PANEL_W - 28, 20)
+                        .build());
     }
-    
-    private void rebuildButtons() {
-        this.clearWidgets();
-        
-        int centerX = this.width / 2;
-        int startY = this.height / 2 - 60;
-        
-        int endIndex = Math.min(scrollOffset + MAX_VISIBLE, playerNames.size());
-        
-        for (int i = scrollOffset; i < endIndex; i++) {
-            String playerName = playerNames.get(i);
-            int index = i;
-            
-            Button button = Button.builder(Component.literal(playerName), btn -> {
-                ClientPlayNetworking.send(new ModNetworking.PlayerSelectPayload(machinePos, playerName));
-                this.onClose();
-            }).bounds(centerX - BUTTON_WIDTH / 2, startY + (i - scrollOffset) * (BUTTON_HEIGHT + BUTTON_SPACING), BUTTON_WIDTH, BUTTON_HEIGHT).build();
-            
-            this.addRenderableWidget(button);
-        }
-        
-        // Scroll up button
-        if (scrollOffset > 0) {
-            Button upButton = Button.builder(Component.literal("▲"), btn -> {
-                scrollOffset--;
-                rebuildButtons();
-            }).bounds(centerX + BUTTON_WIDTH / 2 + 5, startY, 20, 20).build();
-            this.addRenderableWidget(upButton);
-        }
-        
-        // Scroll down button
-        if (scrollOffset + MAX_VISIBLE < playerNames.size()) {
-            Button downButton = Button.builder(Component.literal("▼"), btn -> {
-                scrollOffset++;
-                rebuildButtons();
-            }).bounds(centerX + BUTTON_WIDTH / 2 + 5, startY + (MAX_VISIBLE - 1) * (BUTTON_HEIGHT + BUTTON_SPACING), 20, 20).build();
-            this.addRenderableWidget(downButton);
-        }
+
+    private void select(String name, String uuid) {
+        ClientPlayNetworking.send(new ModNetworking.SelectPlayerPayload(this.pos, name + "|" + uuid));
+        this.onClose();
     }
-    
+
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+        this.renderBackground(guiGraphics, mouseX, mouseY, partialTick);
+        int x0 = (this.width - PANEL_W) / 2;
+        int y0 = (this.height - (ROWS * ROW_H + 78)) / 2;
+        int h = ROWS * ROW_H + 78;
+
+        guiGraphics.fill(x0, y0, x0 + PANEL_W, y0 + h, 0xEE14181F);
+        guiGraphics.fill(x0, y0, x0 + PANEL_W, y0 + 2, 0xFFFFC94D);
+        guiGraphics.drawCenteredString(this.font, this.title, this.width / 2, y0 + 14, 0xFFFFC94D);
+
+        if (this.players.isEmpty()) {
+            guiGraphics.drawCenteredString(this.font, "Sunucuda baska oyuncu yok.",
+                    this.width / 2, y0 + 60, 0xFFB9C2CF);
+        }
+
         super.render(guiGraphics, mouseX, mouseY, partialTick);
-        
-        int centerX = this.width / 2;
-        int centerY = this.height / 2;
-        
-        // Başlık
-        guiGraphics.drawCenteredString(this.font, Component.translatable("gui.aurelvia.select_player"), centerX, centerY - 80, 16777215);
-        
-        // Oyuncu sayısı
-        guiGraphics.drawCenteredString(this.font, 
-            Component.literal(playerNames.size() + " oyuncu"), 
-            centerX, centerY - 68, 10526880);
     }
-    
+
     @Override
     public boolean isPauseScreen() {
         return false;

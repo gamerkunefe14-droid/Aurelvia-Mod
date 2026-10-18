@@ -10,131 +10,123 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.EntityBlock;
-import net.minecraft.world.level.block.HorizontalDirectionalBlock;
-import net.minecraft.world.level.block.Mirror;
-import net.minecraft.world.level.block.Rotation;
-import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraft.world.level.block.entity.BlockEntityTicker;
-import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
-import net.minecraft.world.level.block.state.properties.DirectionProperty;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.phys.BlockHitResult;
-import org.jetbrains.annotations.Nullable;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import tr.aurelvia.AurelviaMachinesMod;
-import tr.aurelvia.block.entity.IdMachineBlockEntity;
 import tr.aurelvia.networking.ModNetworking;
 
 /**
- * Kimlik makinesi bloğu - yerleştirildiğinde 2 blok genişliğinde yapı oluşturur
- * Sağ tıklanınca şifre ekranı açılır
+ * Kimlik Makinesi - ana govde (soldaki parca).
+ *
+ *  Yerlestirildiginde otomatik olarak:
+ *    - yanina (baktigi yone) KONVEYOR
+ *    - ustune BILGISAYAR
+ *  koyar. Uc parca birlikte calisir.
+ *
+ *  Govdeye veya bilgisayara sag tiklamak -> sifre sorar.
  */
-public class IdMachineBlock extends HorizontalDirectionalBlock implements EntityBlock {
+public class IdMachineBlock extends Block {
+
     public static final MapCodec<IdMachineBlock> CODEC = simpleCodec(IdMachineBlock::new);
-    public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
 
     public IdMachineBlock(Properties properties) {
         super(properties);
-        this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH));
+        this.registerDefaultState(this.defaultBlockState()
+                .setValue(BlockStateProperties.HORIZONTAL_FACING, Direction.NORTH)
+                .setValue(IdMachineStructure.ATTACHED, Boolean.FALSE));
     }
 
     @Override
-    protected MapCodec<? extends IdMachineBlock> codec() {
+    public MapCodec<IdMachineBlock> codec() {
         return CODEC;
     }
 
     @Override
-    public BlockState getStateForPlacement(BlockPlaceContext context) {
-        Direction facing = context.getHorizontalDirection().getOpposite();
-        Level level = context.getLevel();
-        BlockPos mainPos = context.getClickedPos();
-        
-        // Konveyör için yer kontrol et
-        BlockPos conveyorPos = mainPos.relative(facing.getClockWise());
-        if (!level.getBlockState(conveyorPos).canBeReplaced(context)) {
-            return null; // Yer yok
-        }
-        
-        return this.defaultBlockState().setValue(FACING, facing);
+    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
+        builder.add(BlockStateProperties.HORIZONTAL_FACING, IdMachineStructure.ATTACHED);
     }
 
+    @Override
+    public BlockState getStateForPlacement(BlockPlaceContext context) {
+        return this.defaultBlockState()
+                .setValue(BlockStateProperties.HORIZONTAL_FACING, context.getHorizontalDirection())
+                .setValue(IdMachineStructure.ATTACHED, Boolean.FALSE);
+    }
+
+    /** Yerlestirilir yerlestirmez konveyoru ve bilgisayari kurar. */
     @Override
     public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean movedByPiston) {
         super.onPlace(state, level, pos, oldState, movedByPiston);
-        
-        if (!level.isClientSide() && !movedByPiston) {
-            Direction facing = state.getValue(FACING);
-            BlockPos conveyorPos = pos.relative(facing.getClockWise());
-            
-            // Konveyör bloğunu yerleştir
-            if (level.getBlockState(conveyorPos).canBeReplaced()) {
-                level.setBlock(conveyorPos, 
-                    AurelviaMachinesMod.CONVEYOR_BLOCK.defaultBlockState().setValue(ConveyorBlock.FACING, facing), 
-                    3);
-            }
+        if (level.isClientSide() || movedByPiston) {
+            return;
         }
-    }
+        Direction facing = state.getValue(BlockStateProperties.HORIZONTAL_FACING);
+        BlockPos conveyorPos = pos.relative(facing);
+        BlockPos computerPos = pos.above();
 
-    @Override
-    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hitResult) {
-        if (!level.isClientSide() && player instanceof ServerPlayer serverPlayer) {
-            BlockEntity blockEntity = level.getBlockEntity(pos);
-            if (blockEntity instanceof IdMachineBlockEntity idMachine) {
-                // Client'a şifre ekranı açmasını söyle
-                ModNetworking.sendOpenIdMachineScreen(serverPlayer, pos);
-            }
+        boolean okConveyor = level.getBlockState(conveyorPos).canBeReplaced();
+        boolean okComputer = level.getBlockState(computerPos).canBeReplaced();
+
+        if (!okConveyor || !okComputer) {
+            return; // yer yok, tek parca olarak kalsin
         }
-        return InteractionResult.sidedSuccess(level.isClientSide());
+
+        // 2 blok genislik: konveyor
+        level.setBlock(conveyorPos, AurelviaMachinesMod.CONVEYOR_BLOCK.defaultBlockState()
+                .setValue(BlockStateProperties.HORIZONTAL_FACING, facing), 3);
+        // ustte bilgisayar
+        level.setBlock(computerPos, AurelviaMachinesMod.COMPUTER_BLOCK.defaultBlockState()
+                .setValue(BlockStateProperties.HORIZONTAL_FACING, facing)
+                .setValue(IdMachineStructure.ATTACHED, Boolean.TRUE), 3);
+        // kendisini de "parca" isaretle
+        level.setBlock(pos, state.setValue(IdMachineStructure.ATTACHED, Boolean.TRUE), 3);
     }
 
+    /** Govdeye sag tiklamak bilgisayari acmakla ayni isi yapar (sifre sorar). */
     @Override
-    public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
-        if (!state.is(newState.getBlock())) {
-            BlockEntity blockEntity = level.getBlockEntity(pos);
-            if (blockEntity instanceof IdMachineBlockEntity idMachine) {
-                // Konveyör bloğunu da kaldır
-                Direction facing = state.getValue(FACING);
-                BlockPos conveyorPos = pos.relative(facing.getClockWise());
-                if (level.getBlockState(conveyorPos).is(AurelviaMachinesMod.CONVEYOR_BLOCK)) {
-                    level.destroyBlock(conveyorPos, true);
-                }
-            }
-        }
-        super.onRemove(state, level, pos, newState, movedByPiston);
-    }
-
-    @Nullable
-    @Override
-    public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
-        return new IdMachineBlockEntity(pos, state);
-    }
-
-    @Nullable
-    @Override
-    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> blockEntityType) {
+    public InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos,
+                                            Player player, BlockHitResult hitResult) {
         if (level.isClientSide()) {
-            return null;
+            return InteractionResult.SUCCESS;
         }
-        return (lvl, pos, st, blockEntity) -> {
-            if (blockEntity instanceof IdMachineBlockEntity idMachine) {
-                idMachine.tick();
+        if (!state.getValue(IdMachineStructure.ATTACHED).booleanValue()) {
+            player.displayClientMessage(
+                    Component.literal("Makine eksik: yaninda konveyor ve ustunde bilgisayar olmali."), true);
+            return InteractionResult.CONSUME;
+        }
+        if (player instanceof ServerPlayer) {
+            ServerPlayNetworking.send((ServerPlayer) player, new ModNetworking.OpenMachinePayload(pos));
+        }
+        return InteractionResult.SUCCESS;
+    }
+
+    /**
+     * Kirilinca parcalari da temizler.
+     * (1.21.11'de onRemove kaldirildigi icin playerWillDestroy kullaniyoruz.)
+     */
+    @Override
+    public BlockState playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
+        if (!level.isClientSide() && state.getValue(IdMachineStructure.ATTACHED).booleanValue()) {
+            Direction facing = state.getValue(BlockStateProperties.HORIZONTAL_FACING);
+            BlockPos conveyorPos = pos.relative(facing);
+            BlockPos computerPos = pos.above();
+
+            Block.dropResources(level.getBlockState(conveyorPos), level, conveyorPos);
+            level.removeBlock(conveyorPos, false);
+
+            Block.dropResources(level.getBlockState(computerPos), level, computerPos);
+            level.removeBlock(computerPos, false);
+
+            // Konveyorun ustunde unutulmus kart varsa onu da kaldir
+            net.minecraft.world.entity.item.ItemEntity card =
+                    IdMachineStructure.findCard(level, conveyorPos);
+            if (card != null) {
+                card.discard();
             }
-        };
-    }
-
-    @Override
-    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(FACING);
-    }
-
-    @Override
-    public BlockState rotate(BlockState state, Rotation rotation) {
-        return state.setValue(FACING, rotation.rotate(state.getValue(FACING)));
-    }
-
-    @Override
-    public BlockState mirror(BlockState state, Mirror mirror) {
-        return state.rotate(mirror.getRotation(state.getValue(FACING)));
+        }
+        return super.playerWillDestroy(level, pos, state, player);
     }
 }

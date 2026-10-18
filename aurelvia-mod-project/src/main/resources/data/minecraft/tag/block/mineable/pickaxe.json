@@ -1,0 +1,8 @@
+{
+  "replace": false,
+  "values": [
+    "aurelvia_machines:computer",
+    "aurelvia_machines:conveyor",
+    "aurelvia_machines:id_machine"
+  ]
+}

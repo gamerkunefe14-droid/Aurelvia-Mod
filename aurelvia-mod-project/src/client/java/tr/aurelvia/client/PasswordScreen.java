@@ -1,6 +1,7 @@
 package tr.aurelvia.client;
 
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
@@ -10,64 +11,62 @@ import net.minecraft.network.chat.Component;
 import tr.aurelvia.networking.ModNetworking;
 
 /**
- * Şifre giriş ekranı
+ * Bilgisayar sifre ekrani. HER ACILISTA gosterilir.
  */
 public class PasswordScreen extends Screen {
-    private final BlockPos machinePos;
+
+    private static final int PANEL_W = 240;
+    private static final int PANEL_H = 118;
+
+    private final BlockPos pos;
     private EditBox passwordBox;
-    private Button submitButton;
-    
+
     public PasswordScreen(BlockPos pos) {
-        super(Component.translatable("gui.aurelvia.password_title"));
-        this.machinePos = pos;
+        super(Component.literal("Aurelvia Bilgisayar\u0131"));
+        this.pos = pos;
     }
-    
+
     @Override
     protected void init() {
-        super.init();
-        
-        int centerX = this.width / 2;
-        int centerY = this.height / 2;
-        
-        // Şifre giriş kutusu
-        passwordBox = new EditBox(this.font, centerX - 100, centerY - 20, 200, 20, Component.literal(""));
-        passwordBox.setMaxLength(100);
-        passwordBox.setBordered(true);
-        passwordBox.setVisible(true);
-        passwordBox.setTextColor(16777215);
-        this.addRenderableWidget(passwordBox);
-        
-        // Gönder butonu
-        submitButton = Button.builder(Component.translatable("gui.aurelvia.submit"), button -> {
-            String password = passwordBox.getValue();
-            ClientPlayNetworking.send(new ModNetworking.PasswordPayload(machinePos, password));
-        }).bounds(centerX - 50, centerY + 10, 100, 20).build();
-        this.addRenderableWidget(submitButton);
-        
-        // Enter tuşu ile de gönderebilsin
-        this.setInitialFocus(passwordBox);
+        int x0 = (this.width - PANEL_W) / 2;
+        int y0 = (this.height - PANEL_H) / 2;
+
+        this.passwordBox = new EditBox(this.font, x0 + 20, y0 + 46, PANEL_W - 40, 20,
+                Component.literal("Sifre"));
+        this.passwordBox.setMaxLength(128);
+        this.addRenderableWidget(this.passwordBox);
+
+        this.addRenderableWidget(Button.builder(Component.literal("Giri\u015f"), b -> this.submit())
+                .bounds(x0 + 20, y0 + 74, (PANEL_W - 50) / 2, 20).build());
+        this.addRenderableWidget(Button.builder(Component.literal("\u0130ptal"), b -> this.onClose())
+                .bounds(x0 + 25 + (PANEL_W - 50) / 2, y0 + 74, (PANEL_W - 50) / 2, 20).build());
+
+        this.setInitialFocus(this.passwordBox);
     }
-    
+
+    private void submit() {
+        String value = this.passwordBox.getValue();
+        if (value == null) {
+            value = "";
+        }
+        ClientPlayNetworking.send(new ModNetworking.PasswordPayload(this.pos, value.trim()));
+        this.onClose();
+    }
+
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+        this.renderBackground(guiGraphics, mouseX, mouseY, partialTick);
+        int x0 = (this.width - PANEL_W) / 2;
+        int y0 = (this.height - PANEL_H) / 2;
+
+        guiGraphics.fill(x0, y0, x0 + PANEL_W, y0 + PANEL_H, 0xEE14181F);
+        guiGraphics.fill(x0, y0, x0 + PANEL_W, y0 + 2, 0xFFFFC94D);
+        guiGraphics.drawCenteredString(this.font, this.title, this.width / 2, y0 + 14, 0xFFFFC94D);
+        guiGraphics.drawString(this.font, "Yetkili \u015fifresini gir:", x0 + 20, y0 + 34, 0xFFB9C2CF);
+
         super.render(guiGraphics, mouseX, mouseY, partialTick);
-        
-        int centerX = this.width / 2;
-        int centerY = this.height / 2;
-        
-        // Başlık
-        guiGraphics.drawCenteredString(this.font, Component.translatable("gui.aurelvia.enter_password"), centerX, centerY - 40, 16777215);
     }
-    
-    @Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        if (keyCode == 257 && passwordBox.isFocused()) { // Enter tuşu
-            submitButton.onPress();
-            return true;
-        }
-        return super.keyPressed(keyCode, scanCode, modifiers);
-    }
-    
+
     @Override
     public boolean isPauseScreen() {
         return false;

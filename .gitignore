@@ -1,0 +1,6 @@
+# Uretilen (derleme zamanı) cıktılar — repoya girmesin
+aurelvia-mod-project/stubs/
+aurelvia-mod-project/build/
+aurelvia-mod-project/*.jar
+__pycache__/
+*.pyc

@@ -1,101 +1,63 @@
-# Aurelvia Makineleri Modu - Build Talimatları
+# Aurelvia Makineleri — Yerel Derleme
 
-## Önemli Not
-GitHub Actions workflow dosyasını otomatik ekleyemediğim için, senin manuel olarak eklemen gerekiyor. Bu çok basit bir işlem:
+Bu mod **sandbox içinde derleniyor**. GitHub Actions / Gradle / Loom **kullanılmıyor**
+(çünkü bu ortamda Maven ve Mojang sunucularına erişim yok).
 
-### Adım 1: Workflow Dosyası Ekle
-1. GitHub'da repoyu aç: https://github.com/gamerkunefe14-droid/Aurelvia-Mod
-2. `aurelvia-mod-project` klasörüne git
-3. Sol üstteki "Add file" → "Create new file" butonuna tıkla
-4. Dosya adı: `.github/workflows/build.yml` (nokta ile başlıyor!)
-5. Aşağıdaki içeriği yapıştır:
+## Hazır JAR
 
-```yaml
-name: Build Aurelvia Mod
+Derlenmiş mod dosyası:
 
-on:
-  push:
-    branches: [ arena/80dc3dc8-aurelvia-mod ]
-  workflow_dispatch:
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Set up JDK 21
-        uses: actions/setup-java@v4
-        with:
-          java-version: '21'
-          distribution: 'temurin'
-      
-      - name: Make gradlew executable
-        run: chmod +x ./aurelvia-mod-project/gradlew
-      
-      - name: Build with Gradle
-        run: cd aurelvia-mod-project && ./gradlew build --no-daemon
-      
-      - name: Upload JAR
-        uses: actions/upload-artifact@v4
-        with:
-          name: Aurelvia-Machines-JAR
-          path: aurelvia-mod-project/build/libs/*.jar
+```
+aurelvia-mod-project/AURELVIA-Machines-1.0.0-fabric-1.21.11.jar
 ```
 
-6. Sayfanın altına in ve "Commit changes" butonuna tıkla
-7. "Actions" sekmesine git - build otomatik başlayacak
-8. Build bitince "Aurelvia-Machines-JAR" artifact'ını indir
+Kurulum: `.minecraft/mods` klasörüne at. **Fabric API** kurulu olmalı.
 
-### Alternatif: Kendi Bilgisayarında Build
-Eğer Java 21 kuruluysa:
+## Yeniden derlemek için
+
 ```bash
-git clone https://github.com/gamerkunefe14-droid/Aurelvia-Mod.git
-cd Aurelvia-Mod
-git checkout arena/80dc3dc8-aurelvia-mod
-cd aurelvia-mod-project
-./gradlew build
+python3 aurelvia-mod-project/tools/build_jar.py
 ```
-JAR dosyası `build/libs/` klasöründe olacak.
 
-## Kurulum
-İndirdiğin JAR dosyasını Minecraft'ın `mods` klasörüne koy. Mevcut Aurelvia modu ile birlikte çalışır.
+Bu betik sırayla şunları yapar:
 
-## Özellikler
-- **Bilgisayar**: Tek başına kullanılamaz, kimlik makinesinin parçası
-- **Konveyör**: Tek başına konveyör olarak kullanılabilir
-- **Kimlik Makinesi**: 2 blok genişliğinde, sağ tıklayınca şifre ister
-- **Kimlik Kartı**: Üzerinde oyuncu adı ve "UNION of YELLOW BANANA" yazar
+| Adım | Ne yapar |
+|---|---|
+| 1 | `tools/gen_stubs.py` — derleme zamanı API iskeletlerini üretir (`stubs/`, JAR'a girmez) |
+| 2 | `tools/gen_resources.py` — dokuları ve tüm JSON kaynaklarını üretir |
+| 3 | JSON dosyalarının tamamını doğrular |
+| 4 | Eclipse **ECJ** ile Java 21 hedefleyerek derler |
+| 5 | `tr/aurelvia/**` sınıflarını + `src/main/resources` içeriğini JAR'a yazar |
 
-## Crafting Tarifleri
+## Çalışma zamanı doğrulaması
 
-### Bilgisayar
+Derlemek yetmez: stub'larda yanlış yazılmış bir imza derlemeyi geçer ama oyunda
+`NoSuchMethodError` / `NoSuchFieldError` verir. Bunu önceden yakalamak için:
+
+```bash
+python3 aurelvia-mod-project/tools/verify_bytecode.py
 ```
-I A I
-I C I
-I I I
-```
-I = Demir Külçe, A = Altın Külçe, C = Bakır Külçe
 
-### Konveyör
-```
-L   L
-S   S
-  B  
-```
-L = Deri, S = Çubuk, B = Demir Blok
+Bu betik üretilen JAR'ın **constant pool**'unu okur, içindeki her
+`net/minecraft/**` sınıf / metod / alan referansını gerçek **Minecraft 1.21.11
+Mojang eşlemeleriyle** karşılaştırır ve bulunamayanı raporlar.
 
-### Kimlik Makinesi
-```
-C    
-K K K
-I K I
-```
-C = Bilgisayar, K = Konveyör, I = Demir Blok
+Son doğrulamada: 303 referans, **0 sorun**.
 
-## Kullanım
-1. Kimlik makinesini yere koy (otomatik olarak yanına konveyör eklenir)
-2. Makineye sağ tıkla
-3. Şifreyi gir: `UOhfyu7679nu6obBnoeryb79huı824byuYBYO`
-4. Listeden bir oyuncu seç
-5. Kimlik kartı konveyörden çıkacak
+## Gereken araçlar (kalıcı kopya)
+
+```
+~/aurelvia-toolchain/ecj.jar          Eclipse JDT derleyicisi (Java 21)
+~/aurelvia-toolchain/mcmap/           Minecraft 1.21.11 eşlemeleri (classes/methods/fields.csv)
+/usr/local/lib/python3.11/dist-packages/jdk4py/java-runtime/bin/java   JRE 21 (ECJ'yi çalıştırır)
+```
+
+## Not: neden stub?
+
+Elimizde JDK değil JRE var ve Minecraft/Fabric kütüphaneleri indirilemiyor.
+Bu yüzden Minecraft ve Fabric API'nin **yalnızca imzalarından** oluşan
+iskelet sınıflar üretiliyor; derleme bunlara karşı yapılıyor, JAR'a ise
+sadece modun kendi sınıfları konuyor.
+
+Bu yöntemde asıl risk stub imzalarının gerçektekinden sapmasıdır — o yüzden
+yukarıdaki `verify_bytecode.py` denetimi zorunlu bir adımdır.

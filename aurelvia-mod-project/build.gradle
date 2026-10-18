@@ -39,6 +39,7 @@ processResources {
 
 tasks.withType(JavaCompile).configureEach {
 	it.options.release = 21
+	it.options.encoding = "UTF-8"
 }
 
 java {
@@ -52,5 +53,41 @@ jar {
 	inputs.property "projectName", projectName
 	from("LICENSE") {
 		rename { "${it}_$projectName"}
+	}
+}
+
+/**
+ * Derleme sinif yolundaki (Minecraft + Fabric API) siniflarin imzalarini yazdirir.
+ * tools/api-classes.txt icindeki siniflar javap ile dokulur.
+ * Kullanim: ./gradlew apiDump
+ */
+tasks.register('apiDump') {
+	def classesFile = file('tools/api-classes.txt')
+	doLast {
+		if (!classesFile.exists()) {
+			println 'apiDump: tools/api-classes.txt yok'
+			return
+		}
+		def names = classesFile.readLines()
+				.collect { it.trim() }
+				.findAll { it && !it.startsWith('#') }
+		if (names.isEmpty()) {
+			println 'apiDump: sinif listesi bos'
+			return
+		}
+
+		def classpath = null
+		try {
+			classpath = sourceSets.client.compileClasspath.asPath
+		} catch (Throwable ignored) {
+			classpath = sourceSets.main.compileClasspath.asPath
+		}
+
+		println '==== API DUMP BASLANGIC ===='
+		def result = exec {
+			commandLine(['javap', '-public', '-classpath', classpath] + names)
+			ignoreExitValue = true
+		}
+		println '==== API DUMP SONU ==== (exit=' + result.exitValue + ')'
 	}
 }

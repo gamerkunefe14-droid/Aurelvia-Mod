@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "C K",
+    "I I",
+    "III"
+  ],
+  "key": {
+    "C": {
+      "item": "aurelvia_machines:computer"
+    },
+    "K": {
+      "item": "aurelvia_machines:conveyor"
+    },
+    "I": {
+      "item": "minecraft:iron_block"
+    }
+  },
+  "result": {
+    "id": "aurelvia_machines:id_machine",
+    "count": 1
+  }
+}

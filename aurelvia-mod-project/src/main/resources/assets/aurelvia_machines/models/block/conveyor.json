@@ -1,6 +1,8 @@
 {
-  "parent": "minecraft:block/cube_all",
+  "parent": "minecraft:block/cube_bottom_top",
   "textures": {
-    "all": "aurelvia_machines:block/conveyor"
+    "top": "aurelvia_machines:block/conveyor_top",
+    "side": "aurelvia_machines:block/conveyor_side",
+    "bottom": "aurelvia_machines:block/conveyor_side"
   }
 }
