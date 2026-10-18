@@ -1,0 +1,15 @@
+{
+  "itemGroup.aurelvia.machines": "Aurelvia Machines",
+  "block.aurelvia.computer": "Computer",
+  "block.aurelvia.conveyor": "Conveyor",
+  "block.aurelvia.id_machine": "ID Machine",
+  "item.aurelvia.id_card": "ID Card",
+  "item.aurelvia.id_card.named": "ID Card - %s",
+  "block.aurelvia.computer.cannot_use_alone": "This computer cannot be used alone! It's part of the ID machine.",
+  "gui.aurelvia.password_title": "ID Machine - Password",
+  "gui.aurelvia.enter_password": "Enter Password:",
+  "gui.aurelvia.submit": "Submit",
+  "gui.aurelvia.select_player": "Select Player:",
+  "gui.aurelvia.wrong_password": "§cWrong password!",
+  "gui.aurelvia.producing_card": "§aProducing ID card for %s..."
+}
