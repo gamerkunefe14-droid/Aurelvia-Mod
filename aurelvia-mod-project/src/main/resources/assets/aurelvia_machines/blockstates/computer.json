@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "aurelvia_machines:block/computer"
+    }
+  }
+}

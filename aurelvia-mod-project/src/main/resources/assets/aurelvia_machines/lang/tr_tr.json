@@ -1,0 +1,15 @@
+{
+  "itemGroup.aurelvia.machines": "Aurelvia Makineleri",
+  "block.aurelvia.computer": "Bilgisayar",
+  "block.aurelvia.conveyor": "Konveyör",
+  "block.aurelvia.id_machine": "Kimlik Makinesi",
+  "item.aurelvia.id_card": "Kimlik Kartı",
+  "item.aurelvia.id_card.named": "Kimlik Kartı - %s",
+  "block.aurelvia.computer.cannot_use_alone": "Bu bilgisayar tek başına kullanılamaz! Kimlik makinesinin bir parçasıdır.",
+  "gui.aurelvia.password_title": "Kimlik Makinesi - Şifre",
+  "gui.aurelvia.enter_password": "Şifreyi Girin:",
+  "gui.aurelvia.submit": "Gönder",
+  "gui.aurelvia.select_player": "Oyuncu Seçin:",
+  "gui.aurelvia.wrong_password": "§cYanlış şifre!",
+  "gui.aurelvia.producing_card": "§a%s için kimlik kartı üretiliyor..."
+}

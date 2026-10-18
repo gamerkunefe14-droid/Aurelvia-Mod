@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "id": "aurelvia_machines",
+  "version": "${version}",
+  "name": "Aurelvia Makineleri",
+  "description": "Kimlik Makinesi, Bilgisayar ve Konveyör blokları.",
+  "authors": [
+    "AURELVIA"
+  ],
+  "license": "CC0-1.0",
+  "icon": "assets/aurelvia_machines/icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "tr.aurelvia.AurelviaMachinesMod"
+    ],
+    "client": [
+      "tr.aurelvia.client.AurelviaMachinesClient"
+    ]
+  },
+  "depends": {
+    "fabricloader": ">=0.17.0",
+    "minecraft": "~1.21.11",
+    "java": ">=21",
+    "fabric-api": "*"
+  }
+}

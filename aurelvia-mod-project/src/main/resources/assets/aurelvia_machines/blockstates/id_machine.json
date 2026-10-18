@@ -1,0 +1,8 @@
+{
+  "variants": {
+    "facing=north": { "model": "aurelvia_machines:block/id_machine" },
+    "facing=south": { "model": "aurelvia_machines:block/id_machine", "y": 180 },
+    "facing=east": { "model": "aurelvia_machines:block/id_machine", "y": 90 },
+    "facing=west": { "model": "aurelvia_machines:block/id_machine", "y": 270 }
+  }
+}
